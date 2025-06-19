@@ -1,16 +1,17 @@
 <div align="center">
 
-# ✨ Magic Resume ✨
+# ✨ Magic Resume - WebDAV 增强版 ✨
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Next.js](https://img.shields.io/badge/Next.js-14.0-black)
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-10.0-purple)
+![WebDAV](https://img.shields.io/badge/WebDAV-Sync-green)
 
 简体中文 | [English](./README.en-US.md)
 
 </div>
 
-Magic Resume 是一个现代化的在线简历编辑器，让创建专业简历变得简单有趣。基于 Next.js 和 Motion 构建，支持实时预览和自定义主题。
+Magic Resume WebDAV 增强版是基于[Magic Resume](https://github.com/JOYCEQL/magic-resume)的二次开发版本，在保留原版所有功能的基础上，增加了 WebDAV 云同步功能，支持坚果云等 WebDAV 服务。
 
 ## 📸 项目截图
 
@@ -26,6 +27,12 @@ Magic Resume 是一个现代化的在线简历编辑器，让创建专业简历�
 - 🔄 实时预览
 - 💾 自动保存
 - 🔒 硬盘级存储
+- ☁️ **WebDAV 云同步** (新增)
+  - 支持坚果云、Nextcloud、ownCloud 等 WebDAV 服务
+  - 自动同步简历数据
+  - 多设备访问和编辑
+  - 批量导入/导出功能
+  - 代理模式解决跨域问题
 
 ## 🛠️ 技术栈
 
@@ -37,13 +44,24 @@ Magic Resume 是一个现代化的在线简历编辑器，让创建专业简历�
 - Zustand
 - Shadcn/ui
 - Lucide Icons
+- WebDAV Client
+
+## 🔄 WebDAV 同步功能
+
+此增强版添加了完整的 WebDAV 同步功能，使您可以：
+
+- 将简历数据安全地存储在自己的 WebDAV 服务上
+- 在多个设备间同步和编辑简历
+- 通过代理模式解决跨域问题，支持更多 WebDAV 服务
+- 批量导入/导出简历
+- 保持数据主权和隐私
 
 ## 🚀 快速开始
 
 1. 克隆项目
 
 ```bash
-git clone git@github.com:JOYCEQL/magic-resume.git
+git clone <您的仓库URL>
 cd magic-resume
 ```
 
@@ -69,9 +87,9 @@ pnpm build
 
 ## ⚡ Vercel 部署
 
-你可以一键部署自己的 Magic Resume 实例：
+你可以一键部署自己的 Magic Resume WebDAV 增强版实例：
 
-[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJOYCEQL%2Fmagic-resume)
+[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<您的仓库URL>)
 
 ## 🐳 Docker 部署
 
@@ -90,41 +108,14 @@ docker compose up -d
 - 自动构建应用镜像
 - 在后台启动容器
 
-### Docker Hub
-
-最新版本的 Magic Resume 已经发布在 Docker Hub：
-
-[Docker Hub](https://hub.docker.com/r/siyueqingchen/magic-resume/)
-
-```bash
-docker pull siyueqingchen/magic-resume:main
-```
-
 ## 📝 开源协议
 
 本项目采用 Apache 2.0 协议，但有一些自定义的部分 - 查看 [LICENSE](LICENSE) 了解详情
 
-## 🗺️ 路线图
+## 致谢
 
-- [x] AI 辅助编写
-- [x] 多语言支持
-- [ ] 支持更多简历模板
-- [ ] 更多格式导出
-- [ ] 自定义模型
-- [ ] 智能一页
-- [ ] 导入 PDF, Markdown 等
-- [ ] 在线简历托管
-
-## 📞 联系方式
-
-可以通过以下方式关注最新动态:
-
-- 作者：SiYue
-- X: @GuangzhouY81070
-- Discord: 欢迎加入群组 https://discord.gg/9mWgZrW3VN
-- 用户群：加微信 qingchensiyue
-- 邮箱：18806723365@163.com
-- 项目主页：https://github.com/JOYCEQL/magic-resume
+- 原项目作者：SiYue
+- 原项目主页：https://github.com/JOYCEQL/magic-resume
 
 ## 🌟 支持项目
 

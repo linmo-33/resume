@@ -11,117 +11,40 @@ import {
   CardContent,
   CardDescription,
   CardFooter,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { getConfig, getFileHandle, verifyPermission } from "@/utils/fileSystem";
 import { useResumeStore } from "@/store/useResumeStore";
 import { initialResumeState } from "@/config/initialResumeData";
-
 import { generateUUID } from "@/utils/uuid";
+
 const ResumesList = () => {
   return <ResumeWorkbench />;
 };
 
 const ResumeWorkbench = () => {
   const t = useTranslations();
-  const {
-    resumes,
-    setActiveResume,
-    updateResume,
-    updateResumeFromFile,
-    addResume,
-    deleteResume,
-    createResume
-  } = useResumeStore();
+  const { resumes, setActiveResume, updateResume, deleteResume, createResume } =
+    useResumeStore();
   const router = useRouter();
-  const [hasConfiguredFolder, setHasConfiguredFolder] = React.useState(false);
-
-  useEffect(() => {
-    const syncResumesFromFiles = async () => {
-      try {
-        const handle = await getFileHandle("syncDirectory");
-        if (!handle) return;
-
-        const hasPermission = await verifyPermission(handle);
-        if (!hasPermission) return;
-
-        const dirHandle = handle as FileSystemDirectoryHandle;
-
-        for await (const entry of dirHandle.values()) {
-          if (entry.kind === "file" && entry.name.endsWith(".json")) {
-            try {
-              const file = await entry.getFile();
-              const content = await file.text();
-              const resumeData = JSON.parse(content);
-              updateResumeFromFile(resumeData);
-            } catch (error) {
-              console.error("Error reading resume file:", error);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error syncing resumes from files:", error);
-      }
-    };
-
-    if (Object.keys(resumes).length === 0) {
-      syncResumesFromFiles();
-    }
-  }, [resumes, updateResume]);
-
-  useEffect(() => {
-    const loadSavedConfig = async () => {
-      try {
-        const handle = await getFileHandle("syncDirectory");
-        const path = await getConfig("syncDirectoryPath");
-        if (handle && path) {
-          setHasConfiguredFolder(true);
-        }
-      } catch (error) {
-        console.error("Error loading saved config:", error);
-      }
-    };
-
-    loadSavedConfig();
-  }, []);
 
   const handleCreateResume = () => {
     const newId = createResume(null);
     setActiveResume(newId);
+    router.push(`/app/workbench/${newId}`);
   };
 
-  const handleImportJson = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
+  const handleEditResume = (resumeId: string) => {
+    setActiveResume(resumeId);
+    router.push(`/app/workbench/${resumeId}`);
+  };
 
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        const content = await file.text();
-        const config = JSON.parse(content);
-
-        const newResume = {
-          ...initialResumeState,
-          ...config,
-          id: generateUUID(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
-        addResume(newResume);
-        toast.success(t("dashboard.resumes.importSuccess"));
-      } catch (error) {
-        console.error("Import error:", error);
-        toast.error(t("dashboard.resumes.importError"));
-      }
-    };
-
-    input.click();
+  const handleDeleteResume = (resumeId: string) => {
+    const resume = resumes[resumeId];
+    if (resume) {
+      deleteResume(resume);
+    }
   };
 
   return (
@@ -138,50 +61,24 @@ const ResumeWorkbench = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        {hasConfiguredFolder ? (
-          <Alert className="mb-6 bg-green-50/50 dark:bg-green-950/30 border-green-200 dark:border-green-900">
-            <AlertDescription className="flex items-center justify-between">
-              <span className="text-green-700 dark:text-green-400">
-                {t("dashboard.resumes.synced")}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                className="ml-4 hover:bg-green-100 dark:hover:bg-green-900"
-                onClick={() => {
-                  router.push("/app/dashboard/settings");
-                }}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                {t("dashboard.resumes.view")}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <Alert
-            variant="destructive"
-            className="mb-6 bg-red-50/50 dark:bg-red-950/30 border-red-200 dark:border-red-900"
-          >
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{t("dashboard.resumes.notice.title")}</AlertTitle>
-            <AlertDescription className="flex items-center justify-between">
-              <span className="text-red-700 dark:text-red-400">
-                {t("dashboard.resumes.notice.description")}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-4 hover:bg-red-100 dark:hover:bg-red-900"
-                onClick={() => {
-                  router.push("/app/dashboard/settings");
-                }}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                {t("dashboard.resumes.notice.goToSettings")}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+        <Alert className="mb-6 bg-green-50/50 dark:bg-green-950/30 border-green-200 dark:border-green-900">
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-green-700 dark:text-green-400">
+              {t("dashboard.resumes.synced")}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-4 hover:bg-green-100 dark:hover:bg-green-900"
+              onClick={() => {
+                router.push("/app/dashboard/settings");
+              }}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              {t("dashboard.resumes.view")}
+            </Button>
+          </AlertDescription>
+        </Alert>
       </motion.div>
 
       <motion.div
@@ -200,7 +97,38 @@ const ResumeWorkbench = () => {
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
             <Button
-              onClick={handleImportJson}
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".json";
+
+                input.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (!file) return;
+
+                  try {
+                    const content = await file.text();
+                    const config = JSON.parse(content);
+
+                    const newResume = {
+                      ...initialResumeState,
+                      ...config,
+                      id: generateUUID(),
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                    };
+
+                    const newId = createResume(newResume);
+                    setActiveResume(newId);
+                    toast.success(t("dashboard.resumes.importSuccess"));
+                  } catch (error) {
+                    console.error("Import error:", error);
+                    toast.error(t("dashboard.resumes.importError"));
+                  }
+                };
+
+                input.click();
+              }}
               variant="outline"
               className="hover:bg-gray-100 dark:border-primary/50 dark:hover:bg-primary/10"
             >
@@ -272,7 +200,7 @@ const ResumeWorkbench = () => {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{
                   duration: 0.3,
-                  delay: index * 0.1
+                  delay: index * 0.1,
                 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -310,7 +238,7 @@ const ResumeWorkbench = () => {
                         transition={{
                           type: "spring",
                           stiffness: 400,
-                          damping: 17
+                          damping: 17,
                         }}
                       >
                         <Button
@@ -319,8 +247,7 @@ const ResumeWorkbench = () => {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveResume(id);
-                            router.push(`/app/workbench/${id}`);
+                            handleEditResume(id);
                           }}
                         >
                           {t("common.edit")}
@@ -332,7 +259,7 @@ const ResumeWorkbench = () => {
                         transition={{
                           type: "spring",
                           stiffness: 400,
-                          damping: 17
+                          damping: 17,
                         }}
                       >
                         <Button
@@ -341,7 +268,7 @@ const ResumeWorkbench = () => {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteResume(resume);
+                            handleDeleteResume(id);
                           }}
                         >
                           {t("common.delete")}

@@ -14,20 +14,13 @@ export function Dock({ children, className, ...props }: DockProps) {
   // Find the index of TemplateSheet for splitting
   const templateSheetIndex = childrenArray.findIndex((child) => {
     if (React.isValidElement(child)) {
-      const tooltip = child.props.children;
-      if (React.isValidElement(tooltip)) {
-        const trigger = tooltip.props.children.find(
-          (child: any) => child?.type?.name === "TooltipTrigger"
-        );
-        if (trigger) {
-          const content = trigger.props.children;
-          if (React.isValidElement(content)) {
-            const icon = content.props.children;
-            return (
-              React.isValidElement(icon) && icon.type?.name === "TemplateSheet"
-            );
-          }
-        }
+      // 简化类型检查，避免深度访问unknown类型
+      try {
+        const displayName =
+          (child.type as any)?.displayName || (child.type as any)?.name;
+        return displayName === "TemplateSheet";
+      } catch {
+        return false;
       }
     }
     return false;

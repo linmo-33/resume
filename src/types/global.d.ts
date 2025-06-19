@@ -1,14 +1,2 @@
-declare global {
-  interface Window {
-    showDirectoryPicker(
-      options?: FilePickerOptions
-    ): Promise<FileSystemDirectoryHandle>;
-  }
-}
-
-interface FilePickerOptions {
-  multiple?: boolean;
-  mode?: "read" | "readwrite";
-}
-
+// 此文件保持为空或仅包含非文件系统相关的全局类型定义
 export {};

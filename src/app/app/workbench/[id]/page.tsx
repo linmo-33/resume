@@ -20,6 +20,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useParams } from "next/navigation";
+import { useResumeStore } from "@/store/useResumeStore";
+import { useAutoSync } from "@/hooks/useAutoSync";
 
 const LAYOUT_CONFIG = {
   DEFAULT: [20, 32, 48],
@@ -154,10 +157,24 @@ const LayoutControls = memo(
 LayoutControls.displayName = "LayoutControls";
 
 export default function Home() {
+  const params = useParams();
+  const { setActiveResume, resumes } = useResumeStore();
+
+  // 使用自动同步钩子，启用定时同步功能
+  useAutoSync();
+
   const [sidePanelCollapsed, setSidePanelCollapsed] = useState(false);
   const [editPanelCollapsed, setEditPanelCollapsed] = useState(false);
   const [previewPanelCollapsed, setPreviewPanelCollapsed] = useState(false);
   const [panelSizes, setPanelSizes] = useState<number[]>(LAYOUT_CONFIG.DEFAULT);
+
+  // 处理路由参数，设置当前活动简历
+  useEffect(() => {
+    const resumeId = params.id as string;
+    if (resumeId && resumes[resumeId]) {
+      setActiveResume(resumeId);
+    }
+  }, [params.id, resumes, setActiveResume]);
 
   const toggleSidePanel = () => {
     setSidePanelCollapsed(!sidePanelCollapsed);

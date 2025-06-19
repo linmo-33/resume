@@ -1,6 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Save } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,20 @@ import ThemeToggle from "../shared/ThemeToggle";
 import { useResumeStore } from "@/store/useResumeStore";
 import { getThemeConfig } from "@/theme/themeConfig";
 import { useGrammarCheck } from "@/hooks/useGrammarCheck";
+import { useAutoSync } from "@/hooks/useAutoSync";
+import { useState } from "react";
 import {
   HoverCard,
   HoverCardTrigger,
-  HoverCardContent
+  HoverCardContent,
 } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface EditorHeaderProps {
   isMobile?: boolean;
@@ -26,11 +34,28 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
   const { menuSections = [], activeSection } = activeResume || {};
   const themeConfig = getThemeConfig();
   const { errors, selectError } = useGrammarCheck();
+  const { manualSync, lastSync } = useAutoSync();
+  const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
   const t = useTranslations();
   const visibleSections = menuSections
     ?.filter((section) => section.enabled)
     .sort((a, b) => a.order - b.order);
+
+  // 手动保存处理函数
+  const handleSave = async () => {
+    if (!activeResume) return;
+
+    setIsSaving(true);
+    try {
+      await manualSync();
+      // 显示保存成功状态1秒
+      setTimeout(() => setIsSaving(false), 1000);
+    } catch (error) {
+      console.error("手动保存失败:", error);
+      setIsSaving(false);
+    }
+  };
 
   return (
     <motion.header
@@ -74,7 +99,7 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
                           <AlertCircle className="w-4 h-4 mt-0.5 text-red-500 shrink-0" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <p>{error.message}</p>
+                              <p>{error.error}</p>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -84,19 +109,12 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
                                 定位
                               </Button>
                             </div>
-                            {error.suggestions.length > 0 && (
-                              <div className="mt-1">
-                                <p className="text-xs text-muted-foreground font-medium">
+                            {error.suggestion && (
+                              <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                <p className="text-sm font-medium">
                                   建议修改：
                                 </p>
-                                {error.suggestions.map((suggestion, i) => (
-                                  <p
-                                    key={i}
-                                    className="text-xs mt-1 px-2 py-1 bg-muted rounded"
-                                  >
-                                    {suggestion}
-                                  </p>
-                                ))}
+                                <p className="text-sm">{error.suggestion}</p>
                               </div>
                             )}
                           </div>
@@ -116,6 +134,36 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
             className="w-60  text-sm hidden md:block"
             placeholder="简历名称"
           />
+
+          {/* 保存按钮 */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="relative"
+                >
+                  <Save
+                    className={`h-5 w-5 ${isSaving ? "text-green-500" : ""}`}
+                  />
+                  {isSaving && (
+                    <span className="absolute top-0 right-0 h-2 w-2 bg-green-500 rounded-full animate-ping" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  保存简历
+                  {lastSync
+                    ? `（上次：${new Date(lastSync).toLocaleTimeString()}）`
+                    : ""}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <ThemeToggle></ThemeToggle>
           <div className="md:flex items-center ">

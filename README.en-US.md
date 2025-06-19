@@ -1,32 +1,38 @@
 <div align="center">
 
-# ✨ Magic Resume ✨
+# ✨ Magic Resume - WebDAV Enhanced Edition ✨
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Next.js](https://img.shields.io/badge/Next.js-14.0-black)
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-10.0-purple)
+![WebDAV](https://img.shields.io/badge/WebDAV-Sync-green)
 
 [简体中文](./README.md) | English
 
 </div>
 
-Magic Resume is a modern online resume editor that makes creating professional resumes simple and enjoyable. Built with Next.js and Framer Motion, it supports real-time preview and custom themes.
+Magic Resume WebDAV Enhanced Edition is a fork of [Magic Resume](https://github.com/JOYCEQL/magic-resume) that adds WebDAV cloud synchronization functionality while preserving all original features. It supports Nutstore, Nextcloud, ownCloud, and other WebDAV services.
 
 ## 📸 Screenshots
 
-![782shots_so](https://github.com/user-attachments/assets/dda52f82-10eb-4f8d-a643-a11c3c4da35f)
+![782shots_so](https://github.com/user-attachments/assets/d59f7582-799c-468d-becf-59ee6453acfd)
 
 ## ✨ Features
 
 - 🚀 Built with Next.js 14+
-- 💫 Smooth animations (Framer Motion)
+- 💫 Smooth animations (Motion)
 - 🎨 Custom theme support
-- 📱 Responsive design
 - 🌙 Dark mode
 - 📤 Export to PDF
 - 🔄 Real-time preview
 - 💾 Auto-save
-- 🔒 Local storage
+- 🔒 Disk-level storage
+- ☁️ **WebDAV Cloud Sync** (New)
+  - Support for Nutstore, Nextcloud, ownCloud, and other WebDAV services
+  - Automatic resume data synchronization
+  - Multi-device access and editing
+  - Batch import/export functionality
+  - Proxy mode to solve CORS issues
 
 ## 🛠️ Tech Stack
 
@@ -38,13 +44,24 @@ Magic Resume is a modern online resume editor that makes creating professional r
 - Zustand
 - Shadcn/ui
 - Lucide Icons
+- WebDAV Client
+
+## 🔄 WebDAV Sync Feature
+
+This enhanced version adds complete WebDAV synchronization functionality, allowing you to:
+
+- Securely store your resume data on your own WebDAV service
+- Synchronize and edit resumes across multiple devices
+- Solve CORS issues with proxy mode, supporting more WebDAV services
+- Batch import/export resumes
+- Maintain data sovereignty and privacy
 
 ## 🚀 Quick Start
 
-1. Clone the project
+1. Clone the repository
 
 ```bash
-git clone git@github.com:JOYCEQL/magic-resume.git
+git clone <YOUR_REPOSITORY_URL>
 cd magic-resume
 ```
 
@@ -54,33 +71,33 @@ cd magic-resume
 pnpm install
 ```
 
-3. Start development server
+3. Start the development server
 
 ```bash
 pnpm dev
 ```
 
-4. Open browser and visit `http://localhost:3000`
+4. Open your browser and visit `http://localhost:3000`
 
-## 📦 Build and Deploy
+## 📦 Build
 
 ```bash
 pnpm build
 ```
 
-## ⚡ Deploy with Vercel
+## ⚡ Deploy on Vercel
 
-You can deploy your own instance of Magic Resume with one click:
+You can deploy your own Magic Resume WebDAV Enhanced Edition instance with one click:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FJOYCEQL%2Fmagic-resume)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<YOUR_REPOSITORY_URL>)
 
 ## 🐳 Docker Deployment
 
 ### Docker Compose
 
-1. Ensure you have Docker and Docker Compose installed
+1. Make sure you have Docker and Docker Compose installed
 
-2. Run the following command in the project root directory:
+2. Run the following command in the project root:
 
 ```bash
 docker compose up -d
@@ -91,41 +108,26 @@ This will:
 - Automatically build the application image
 - Start the container in the background
 
-### Docker Hub
-
-The latest version of Magic Resume is available on Docker Hub:
-
-[Docker Hub](https://hub.docker.com/r/siyueqingchen/magic-resume/)
-
-```bash
-docker pull siyueqingchen/magic-resume:main
-```
-
 ## 📝 License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details
+This project is licensed under the Apache 2.0 License with some custom parts - see the [LICENSE](LICENSE) file for details.
 
 ## 🗺️ Roadmap
 
 - [x] AI-assisted writing
 - [x] Multi-language support
-- [ ] Support for more resume templates
-- [ ] Support for more export formats
-- [ ] Import PDF, Markdown, etc.
-- [ ] Custom model
-- [ ] Smart single page
-- [ ] Online resume hosting
+- [x] **WebDAV Cloud Sync** (Implemented)
+- [ ] More resume templates
+- [ ] More export formats
+- [ ] Custom models
+- [ ] Smart single-page
+- [ ] Import from PDF, Markdown, etc.
 
 ## 📞 Contact
 
-You can follow the latest updates via:
-
-- Author: Siyue
-- X: @GuangzhouY81070
-- Discord: Join our community https://discord.gg/9mWgZrW3VN
-- Email: 18806723365@163.com
-- Project Homepage: https://github.com/JOYCEQL/magic-resume
+- Original project author: SiYue
+- Original project homepage: https://github.com/JOYCEQL/magic-resume
 
 ## 🌟 Support
 
-If you find this project helpful, please give it a star ⭐️
+If this project helped you, please consider giving it a star ⭐️ 

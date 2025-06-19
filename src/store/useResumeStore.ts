@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { getFileHandle, verifyPermission } from "@/utils/fileSystem";
 import {
   BasicInfo,
   Education,
@@ -17,6 +16,9 @@ import {
   initialResumeStateEn,
 } from "@/config/initialResumeData";
 import { generateUUID } from "@/utils/uuid";
+import { webdavClient, WebDAVConfig } from "@/utils/webdav";
+import { useWebDAVStore } from "./useWebDAVStore";
+
 interface ResumeStore {
   resumes: Record<string, ResumeData>;
   activeResumeId: string | null;
@@ -59,50 +61,70 @@ interface ResumeStore {
   updateGlobalSettings: (settings: Partial<GlobalSettings>) => void;
   setThemeColor: (color: string) => void;
   setTemplate: (templateId: string) => void;
-  addResume: (resume: ResumeData) => string;
+  addResume: (resume: ResumeData) => Promise<string>;
+
+  // WebDAV 集成相关方法
+  enableWebDAVSync: (enabled: boolean) => void;
+  configureWebDAV: (config: WebDAVConfig) => Promise<boolean>;
+  syncToWebDAV: (resumeId?: string) => Promise<boolean>;
+  initializeWebDAVSync: () => Promise<void>;
+  getWebDAVSyncStatus: () => { isEnabled: boolean; status: string };
 }
 
-// 同步简历到文件系统
-const syncResumeToFile = async (
+// 智能同步函数 - 仅WebDAV云端同步
+const smartSync = async (
   resumeData: ResumeData,
   prevResume?: ResumeData
-) => {
+): Promise<void> => {
   try {
-    const handle = await getFileHandle("syncDirectory");
-    if (!handle) {
-      console.warn("No directory handle found");
-      return;
-    }
-
-    const hasPermission = await verifyPermission(handle);
-    if (!hasPermission) {
-      console.warn("No permission to write to directory");
-      return;
-    }
-
-    const dirHandle = handle as FileSystemDirectoryHandle;
-
-    if (
-      prevResume &&
-      prevResume.id === resumeData.id &&
-      prevResume.title !== resumeData.title
-    ) {
-      try {
-        await dirHandle.removeEntry(`${prevResume.title}.json`);
-      } catch (error) {
-        console.warn("Error deleting old file:", error);
-      }
-    }
-
-    const fileName = `${resumeData.title}.json`;
-    const fileHandle = await dirHandle.getFileHandle(fileName, {
-      create: true,
+    // 检查是否启用WebDAV同步
+    const webdavStore = useWebDAVStore.getState();
+    console.log("WebDAV同步状态检查:", {
+      isEnabled: webdavStore.isEnabled,
+      isConnected: webdavStore.isConnected,
+      hasConfig: !!webdavStore.config,
+      resumeTitle: resumeData.title,
     });
-    const writable = await fileHandle.createWritable();
-    await writable.write(JSON.stringify(resumeData, null, 2));
-    await writable.close();
+
+    if (webdavStore.isEnabled && webdavStore.config) {
+      // 确保WebDAV客户端已初始化
+      if (!webdavStore.isConnected) {
+        console.log("WebDAV未连接，尝试重新连接...");
+        const connected = await webdavStore.connect();
+        if (!connected) {
+          throw new Error("WebDAV连接失败");
+        }
+      }
+
+      // 检查webdavClient是否已正确初始化
+      if (!webdavClient.client && !webdavClient.config) {
+        console.log("WebDAV客户端未初始化，正在初始化...");
+        const initialized = await webdavClient.initialize(
+          webdavStore.config,
+          true
+        ); // 强制使用代理模式
+        if (!initialized) {
+          throw new Error("WebDAV客户端初始化失败");
+        }
+      }
+
+      try {
+        // 使用智能保存功能上传JSON文件
+        console.log(`开始上传简历JSON文件: "${resumeData.title}"`);
+        await webdavClient.smartSave(resumeData);
+        console.log(`✅ 简历 "${resumeData.title}" 已成功同步到WebDAV服务器`);
+      } catch (error) {
+        console.error("WebDAV同步失败:", error);
+        throw error; // 没有本地备份，WebDAV失败时抛出错误
+      }
+    } else {
+      console.log(
+        `WebDAV未启用或未配置，简历 "${resumeData.title}" 仅保存到浏览器存储`
+      );
+    }
   } catch (error) {
-    console.error("Error syncing resume to file:", error);
+    console.error("同步失败:", error);
+    throw error;
   }
 };
 
@@ -151,7 +173,10 @@ export const useResumeStore = create(
           activeResume: newResume,
         }));
 
-        syncResumeToFile(newResume);
+        // 保留创建简历时的自动同步，确保新建简历能立即同步
+        smartSync(newResume).catch((error) => {
+          console.error("创建简历时同步失败:", error);
+        });
 
         return id;
       },
@@ -164,9 +189,13 @@ export const useResumeStore = create(
           const updatedResume = {
             ...resume,
             ...data,
+            updatedAt: new Date().toISOString(), // 确保更新时间戳
           };
 
-          syncResumeToFile(updatedResume, resume);
+          // 移除每次更改后的自动同步，改为定时同步和手动保存
+          // smartSync(updatedResume, resume).catch((error) => {
+          //   console.error("更新简历时同步失败:", error);
+          // });
 
           return {
             resumes: {
@@ -209,20 +238,17 @@ export const useResumeStore = create(
           };
         });
 
+        // 删除WebDAV文件
         (async () => {
-          try {
-            const handle = await getFileHandle("syncDirectory");
-            if (!handle) return;
-
-            const hasPermission = await verifyPermission(handle);
-            if (!hasPermission) return;
-
-            const dirHandle = handle as FileSystemDirectoryHandle;
+          const webdavStore = useWebDAVStore.getState();
+          if (webdavStore.isEnabled && webdavStore.isConnected) {
             try {
-              await dirHandle.removeEntry(`${resume.title}.json`);
-            } catch (error) {}
-          } catch (error) {
-            console.error("Error deleting resume file:", error);
+              // 使用webdavClient的deleteResume方法替代直接调用client.deleteFile
+              await webdavClient.deleteResume(resumeId);
+              console.log(`已从WebDAV删除简历: ${resume.title}`);
+            } catch (error) {
+              console.warn("从WebDAV删除简历失败:", error);
+            }
           }
         })();
       },
@@ -259,6 +285,11 @@ export const useResumeStore = create(
           activeResume: duplicatedResume,
         }));
 
+        // 保留复制简历时的自动同步，确保复制的简历能立即同步
+        smartSync(duplicatedResume).catch((error) => {
+          console.error("复制简历时同步失败:", error);
+        });
+
         return newId;
       },
 
@@ -289,7 +320,10 @@ export const useResumeStore = create(
             activeResume: updatedResume,
           };
 
-          syncResumeToFile(updatedResume, state.activeResume);
+          // 移除每次更改后的自动同步，改为定时同步和手动保存
+          // smartSync(updatedResume, state.activeResume).catch((error) => {
+          //   console.error("更新基本信息时同步失败:", error);
+          // });
 
           return newState;
         });
@@ -603,7 +637,18 @@ export const useResumeStore = create(
           activeResume: updatedResume,
         });
       },
-      addResume: (resume: ResumeData) => {
+      addResume: async (resume: ResumeData) => {
+        // 先检查 WebDAV 状态
+        const webdavStore = useWebDAVStore.getState();
+        if (
+          webdavStore.isEnabled &&
+          !webdavStore.isConnected &&
+          webdavStore.config
+        ) {
+          // 尝试重新连接
+          await webdavStore.connect();
+        }
+
         set((state) => ({
           resumes: {
             ...state.resumes,
@@ -612,8 +657,122 @@ export const useResumeStore = create(
           activeResumeId: resume.id,
         }));
 
-        syncResumeToFile(resume);
+        // 使用智能同步
+        if (webdavStore.isEnabled && webdavStore.isConnected) {
+          await smartSync(resume);
+        }
         return resume.id;
+      },
+
+      // WebDAV 集成方法
+      enableWebDAVSync: (enabled: boolean) => {
+        const webdavStore = useWebDAVStore.getState();
+        webdavStore.enableSync(enabled);
+      },
+
+      configureWebDAV: async (config: WebDAVConfig): Promise<boolean> => {
+        const webdavStore = useWebDAVStore.getState();
+        webdavStore.setConfig(config);
+        const connected = await webdavStore.connect();
+
+        if (connected) {
+          // 连接成功后，尝试初始化同步
+          await get().initializeWebDAVSync();
+        }
+
+        return connected;
+      },
+
+      syncToWebDAV: async (resumeId?: string): Promise<boolean> => {
+        const webdavStore = useWebDAVStore.getState();
+        if (!webdavStore.isEnabled || !webdavStore.isConnected) {
+          console.warn("WebDAV 未启用或未连接");
+          return false;
+        }
+
+        try {
+          if (resumeId) {
+            // 同步指定简历
+            const resume = get().resumes[resumeId];
+            if (resume) {
+              await webdavClient.smartSave(resume, true); // 强制同步
+              return true;
+            }
+          } else {
+            // 同步所有简历
+            const resumes = Object.values(get().resumes);
+            for (const resume of resumes) {
+              await webdavClient.smartSave(resume, true); // 强制同步
+            }
+            return true;
+          }
+        } catch (error) {
+          console.error("WebDAV 同步失败:", error);
+          return false;
+        }
+        return false;
+      },
+
+      initializeWebDAVSync: async (): Promise<void> => {
+        const webdavStore = useWebDAVStore.getState();
+        if (!webdavStore.isEnabled || !webdavStore.isConnected) {
+          return;
+        }
+
+        try {
+          // 执行自动同步
+          const result = await webdavStore.autoSyncOnLoad();
+
+          if (result) {
+            // 同步成功，更新本地简历数据
+            const remoteResumes = await webdavStore.loadRemoteResumes();
+
+            // 合并远程简历到本地store
+            Object.values(remoteResumes).forEach((remoteResume: any) => {
+              const localResume = get().resumes[remoteResume.id];
+
+              if (!localResume) {
+                // 新的远程简历，直接添加
+                set((state) => ({
+                  resumes: {
+                    ...state.resumes,
+                    [remoteResume.id]: remoteResume,
+                  },
+                }));
+              } else {
+                // 比较时间戳，使用最新的版本
+                const localTime = new Date(localResume.updatedAt);
+                const remoteTime = new Date(remoteResume.updatedAt);
+
+                if (remoteTime > localTime) {
+                  // 远程更新，使用远程版本
+                  set((state) => ({
+                    resumes: {
+                      ...state.resumes,
+                      [remoteResume.id]: remoteResume,
+                    },
+                    activeResume:
+                      state.activeResumeId === remoteResume.id
+                        ? remoteResume
+                        : state.activeResume,
+                  }));
+                }
+              }
+            });
+
+            console.log("WebDAV 初始化同步完成");
+          }
+        } catch (error) {
+          console.warn("WebDAV 初始化同步失败:", error);
+        }
+      },
+
+      getWebDAVSyncStatus: () => {
+        const webdavStore = useWebDAVStore.getState();
+        return {
+          isEnabled: webdavStore.isEnabled,
+          status: webdavStore.syncStatus.status,
+        };
       },
     }),
     {

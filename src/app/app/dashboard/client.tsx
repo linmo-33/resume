@@ -13,16 +13,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Logo from "@/components/shared/Logo";
 import { useTranslations } from "next-intl";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+import { SyncNotification } from "@/components/ui/sync-notification";
+import { useWebDAVInit } from "@/hooks/useWebDAVInit";
 
 interface MenuItem {
   title: string;
@@ -34,27 +37,29 @@ interface MenuItem {
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const t = useTranslations("dashboard");
+  const { initState } = useWebDAVInit();
+
   const sidebarItems: MenuItem[] = [
     {
       title: t("sidebar.resumes"),
       url: "/app/dashboard/resumes",
-      icon: FileText
+      icon: FileText,
     },
     {
       title: t("sidebar.templates"),
       url: "/app/dashboard/templates",
-      icon: SwatchBook
+      icon: SwatchBook,
     },
     {
       title: t("sidebar.settings"),
       url: "/app/dashboard/settings",
-      icon: Settings
+      icon: Settings,
     },
     {
       title: t("sidebar.ai"),
       url: "/app/dashboard/ai",
-      icon: Bot
-    }
+      icon: Bot,
+    },
   ];
 
   const router = useRouter();
@@ -87,8 +92,23 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     return item.url === pathname || item.href === pathname;
   };
 
+  // 显示加载屏幕的条件：正在初始化或者处于连接/同步阶段
+  const showLoadingScreen =
+    initState.isInitializing ||
+    initState.stage === "connecting" ||
+    initState.stage === "syncing";
+
   return (
     <div className="flex h-screen bg-background">
+      {/* WebDAV 初始化加载屏幕 */}
+      <LoadingScreen
+        isVisible={showLoadingScreen}
+        stage={initState.stage}
+        message={initState.message}
+        progress={initState.progress}
+        details={initState.details}
+      />
+
       <SidebarProvider open={open} onOpenChange={setOpen}>
         <Sidebar collapsible={collapsible}>
           <SidebarHeader>
@@ -163,6 +183,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex-1">{children}</div>
         </main>
       </SidebarProvider>
+
+      {/* 全局同步状态通知 */}
+      <SyncNotification />
     </div>
   );
 };

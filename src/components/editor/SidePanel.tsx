@@ -140,7 +140,7 @@ export function SidePanel() {
         <SettingCard icon={Layout} title={t("layout.title")}>
           <LayoutSetting
             menuSections={menuSections}
-            activeSection={activeSection}
+            activeSection={activeSection || ""}
             setActiveSection={setActiveSection}
             toggleSectionVisibility={toggleSectionVisibility}
             updateMenuSections={updateMenuSections}

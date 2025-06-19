@@ -140,7 +140,7 @@ const MenuButton = ({
   );
 };
 
-const TextColorButton = ({ editor }) => {
+const TextColorButton = ({ editor }: { editor: any }) => {
   const [activeColor, setActiveColor] = React.useState<string | null>(null);
   const t = useTranslations("richEditor");
   const colors = getColors(t);
@@ -216,7 +216,7 @@ const TextColorButton = ({ editor }) => {
   );
 };
 
-const BackgroundColorButton = ({ editor }) => {
+const BackgroundColorButton = ({ editor }: { editor: any }) => {
   const [activeBgColor, setActiveBgColor] = React.useState<string | null>(null);
   const t = useTranslations("richEditor");
   const bgColors = getBgColors(t);
