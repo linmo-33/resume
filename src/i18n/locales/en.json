@@ -1,8 +1,8 @@
 {
   "common": {
-    "title": "Magic Resume",
+    "title": "CV Resume",
     "subtitle": "AI Driven Resume Editor",
-    "description": "Magic Resume is an open source resume editor, free, privacy-first. No registration required, all data stored locally, support data backup and export, ensuring your resume data is always available.",
+    "description": "CV Resume is an open source resume editor, free, privacy-first. No registration required, all data stored locally, support data backup and export, ensuring your resume data is always available.",
     "dashboard": "Dashboard",
     "edit": "Edit",
     "delete": "Delete",
@@ -11,7 +11,7 @@
   },
   "home": {
     "header": {
-      "title": "Magic Resume",
+      "title": "CV Resume",
       "startButton": "Get Started",
       "features": "Features",
       "pricing": "Pricing",
@@ -23,12 +23,12 @@
     "hero": {
       "badge": "Smart Resume Creation",
       "title": "Make Resume Creation Simple and Smart",
-      "subtitle": "Magic Resume uses AI technology to help you quickly create professional resumes. No registration required, free to use, with secure data storage.",
+      "subtitle": "CV Resume uses AI technology to help you quickly create professional resumes. No registration required, free to use, with secure data storage.",
       "cta": "Get Started",
       "secondary": "Browse Templates"
     },
     "features": {
-      "title": "Why Choose Magic Resume?",
+      "title": "Why Choose CV Resume?",
       "subtitle": "We provide an all-in-one resume solution to make your job search journey smoother",
       "ai": {
         "badge": "AI Smart Check",
@@ -40,11 +40,11 @@
         "item2_description": "Automatically detects and corrects grammar and spelling errors"
       },
       "storage": {
-        "badge": "Local Storage",
+        "badge": "WebDav Storage",
         "title": "Data Security, Privacy First",
-        "description": "All resume data is fully stored locally, no need to worry about privacy leaks. Support data export backup, ensure your resume data is always available.",
-        "item1": "Local file storage",
-        "item1_description": "Resume data securely stored on your computer's hard drive",
+        "description": "All resume data is fully stored webDav, no need to worry about privacy leaks. Support data export backup, ensure your resume data is always available.",
+        "item1": "webDav storage",
+        "item1_description": "Resume data securely stored on your webDav",
         "item2": "Multiple export formats",
         "item2_description": "Support PDF and JSON format export",
         "item3": "Support data export backup"
@@ -61,24 +61,24 @@
       "content": "New AI Resume Enhancement Feature is Live"
     },
     "footer": {
-      "copyright": " 2025 Magic Resume. All rights reserved."
+      "copyright": " 2025 CV Resume. All rights reserved."
     },
     "changelog": "Changelog",
     "cta": {
       "title": "Start Your New Career Chapter",
-      "description": "Start using Magic Resume now to create an impressive resume",
+      "description": "Start using CV Resume now to create an impressive resume",
       "button": "Start Using for Free"
     },
     "faq": {
       "title": "Frequently Asked Questions",
       "items": [
         {
-          "question": "Is Magic Resume free to use?",
-          "answer": "Magic Resume is currently free, meeting basic resume creation needs. The open-source version's features will remain unchanged, and the PDF export feature will always be free."
+          "question": "Is CV Resume free to use?",
+          "answer": "CV Resume is currently free, meeting basic resume creation needs. The open-source version's features will remain unchanged, and the PDF export feature will always be free."
         },
         {
           "question": "Is my resume data secure?",
-          "answer": "Yes, very secure. Magic Resume uses local storage, meaning all your data is stored on your own device with no cloud storage, ensuring complete privacy protection."
+          "answer": "Yes, very secure. CV Resume uses local storage, meaning all your data is stored on your own device with no cloud storage, ensuring complete privacy protection."
         },
         {
           "question": "What export formats are supported?",

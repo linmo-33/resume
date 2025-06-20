@@ -7,8 +7,6 @@
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-10.0-purple)
 ![WebDAV](https://img.shields.io/badge/WebDAV-Sync-green)
 
-简体中文 | [English](./README.en-US.md)
-
 </div>
 
 Magic Resume WebDAV 增强版是基于[Magic Resume](https://github.com/JOYCEQL/magic-resume)的二次开发版本，在保留原版所有功能的基础上，增加了 WebDAV 云同步功能，支持坚果云等 WebDAV 服务。
@@ -61,7 +59,7 @@ Magic Resume WebDAV 增强版是基于[Magic Resume](https://github.com/JOYCEQL/
 1. 克隆项目
 
 ```bash
-git clone <您的仓库URL>
+git clone https://github.com/linmo-33/resume.git
 cd magic-resume
 ```
 
@@ -89,7 +87,7 @@ pnpm build
 
 你可以一键部署自己的 Magic Resume WebDAV 增强版实例：
 
-[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<您的仓库URL>)
+[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/linmo-33/resume.git)
 
 ## 🐳 Docker 部署
 
