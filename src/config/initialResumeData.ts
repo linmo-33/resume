@@ -16,7 +16,7 @@ const initialGlobalSettings: GlobalSettings = {
 export const initialResumeState = {
   title: "新建简历",
   basic: {
-    name: "魔方",
+    name: "小黑子",
     title: "高级前端工程师",
     employementStatus: "离职",
     email: "zhangsan@example.com",

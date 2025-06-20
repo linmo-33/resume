@@ -116,7 +116,7 @@
       "importError": "Import failed, please check the file format",
       "notice": {
         "title": "Attention",
-        "description": "It is recommended to configure a resume backup folder in the settings to prevent your data from being lost when the browser cache is cleared",
+        "description": "It is recommended to configure a resume WebDAV storage in the settings to prevent your data from being lost when the browser cache is cleared",
         "goToSettings": "Go to Settings"
       }
     },

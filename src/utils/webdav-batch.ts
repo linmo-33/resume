@@ -261,11 +261,11 @@ export class WebDAVBatchOperations {
 
     // 1. 首先从远程导入更新的简历
     console.log("1. 从远程导入更新的简历...");
-    const downloaded = await this.importAllFromWebDAV();
+    const downloaded = await WebDAVBatchOperations.importAllFromWebDAV();
 
     // 2. 然后将本地简历同步到远程
     console.log("2. 将本地简历同步到远程...");
-    const uploaded = await this.syncAllToWebDAV();
+    const uploaded = await WebDAVBatchOperations.syncAllToWebDAV();
 
     console.log("双向同步完成", { uploaded, downloaded });
 
@@ -366,7 +366,7 @@ export class WebDAVBatchOperations {
     if (
       !webdavStore.isEnabled ||
       !webdavStore.isConnected ||
-      !webdavClient.client
+      !webdavClient.hasActiveClient()
     ) {
       throw new Error("WebDAV 未启用或未连接");
     }

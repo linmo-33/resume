@@ -10,7 +10,7 @@
     <text x="12" y="11" font-family="Arial" font-size="8" font-weight="bold" fill="white" text-anchor="middle">安全</text>
     
     <!-- 标题 -->
-    <text x="30" y="11" font-family="Arial" font-size="10" font-weight="bold" fill="#333333">本地存储</text>
+    <text x="30" y="11" font-family="Arial" font-size="10" font-weight="bold" fill="#333333">WebDAV 存储</text>
   </g>
   
   
@@ -29,13 +29,13 @@
     <!-- 硬盘图示 -->
     <g transform="translate(70, 40)">
       <rect x="0" y="0" width="50" height="15" rx="2" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
-      <text x="25" y="10" font-family="Arial" font-size="7" fill="#475569" text-anchor="middle">本地硬盘</text>
+      <text x="25" y="10" font-family="Arial" font-size="7" fill="#475569" text-anchor="middle">WebDAV 存储</text>
       
       <!-- 硬盘指示灯 -->
       <circle cx="5" cy="7.5" r="2" fill="#10B981"/>
     </g>
     
-    <!-- 文件夹图标 - 突出显示 -->
+    <!-- 云端图标 - 突出显示 -->
     <g transform="translate(130, 40)">
       <!-- 文件夹背景 -->
       <path d="M0,3 L10,3 L13,0 L45,0 L45,35 L0,35 Z" fill="#FBBF24" stroke="#F59E0B" stroke-width="1"/>

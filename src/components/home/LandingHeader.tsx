@@ -42,7 +42,7 @@ export default function LandingHeader() {
                   <Moon className="h-[1.2rem] w-[1.2rem] absolute inset-0 m-auto rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 </div>
               </ThemeToggle>
-              <GitHubStars />
+              {/* <GitHubStars /> */}
 
               {/* <Link
                 href={`/${locale}/changelog`}

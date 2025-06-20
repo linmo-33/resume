@@ -86,23 +86,25 @@ export const BatchOperationsPanel: React.FC<BatchOperationsPanelProps> = ({
   };
 
   const handleSyncAll = () => {
-    runOperation("sync", WebDAVBatchOperations.syncAllToWebDAV);
+    runOperation("sync", () => WebDAVBatchOperations.syncAllToWebDAV());
   };
 
   const handleImportAll = () => {
-    runOperation("import", WebDAVBatchOperations.importAllFromWebDAV);
+    runOperation("import", () => WebDAVBatchOperations.importAllFromWebDAV());
   };
 
   const handleBidirectionalSync = () => {
-    runOperation("bidirectional", WebDAVBatchOperations.bidirectionalSync);
+    runOperation("bidirectional", () =>
+      WebDAVBatchOperations.bidirectionalSync()
+    );
   };
 
   const handleCleanup = () => {
-    runOperation("cleanup", WebDAVBatchOperations.cleanupOrphanedFiles);
+    runOperation("cleanup", () => WebDAVBatchOperations.cleanupOrphanedFiles());
   };
 
   const handleCheckStatus = () => {
-    runOperation("status", WebDAVBatchOperations.checkSyncStatus);
+    runOperation("status", () => WebDAVBatchOperations.checkSyncStatus());
   };
 
   const renderResult = () => {
@@ -275,24 +277,6 @@ export const BatchOperationsPanel: React.FC<BatchOperationsPanelProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">仅本地</span>
-                <Badge variant="secondary">
-                  {statusResult.localOnly.length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">仅远程</span>
-                <Badge variant="secondary">
-                  {statusResult.remoteOnly.length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">需要处理</span>
-                <Badge variant="secondary">
-                  {statusResult.conflicts.length}
-                </Badge>
-              </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm">已同步</span>
                 <Badge variant="default">{statusResult.synced.length}</Badge>

@@ -72,24 +72,30 @@ const PreviewDock = ({
     if (!resumeContentRef.current) return;
     const config = AI_MODEL_CONFIGS[selectedModel];
     const isConfigured =
-        selectedModel === "doubao"
-            ? doubaoApiKey && doubaoModelId
-            : selectedModel === "openai"
-                ? openaiApiKey && openaiModelId && openaiApiEndpoint
-                : config.requiresModelId
-                    ? deepseekApiKey && deepseekModelId
-                    : deepseekApiKey;
+      selectedModel === "doubao"
+        ? doubaoApiKey && doubaoModelId
+        : selectedModel === "openai"
+        ? openaiApiKey && openaiModelId && openaiApiEndpoint
+        : config.requiresModelId
+        ? deepseekApiKey && deepseekModelId
+        : deepseekApiKey;
 
     if (!isConfigured) {
       toast.error(
         <>
-          <span>{t("grammarCheck.configurePrompt")}</span>
-          <Button
-            className="p-0 h-auto text-white"
-            onClick={() => router.push("/app/dashboard/ai")}
-          >
-            {t("grammarCheck.configureButton")}
-          </Button>
+          <div className="flex flex-col gap-2">
+            <span className="font-medium">
+              {t("grammarCheck.configurePrompt")}
+            </span>
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-primary hover:bg-primary/90 text-white mt-1 w-full"
+              onClick={() => router.push("/app/dashboard/ai")}
+            >
+              {t("grammarCheck.configureButton")}
+            </Button>
+          </div>
         </>
       );
       return;

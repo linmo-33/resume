@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Magic Resume",
-    short_name: "Magic Resume",
+    name: "CV Resume",
+    short_name: "CV Resume",
     description: "A Progressive Web App built with Next.js",
     start_url: "/",
     display: "standalone",
@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         src: "/icon.png",
         sizes: "512x512",
-        type: "image/png"
-      }
-    ]
+        type: "image/png",
+      },
+    ],
   };
 }

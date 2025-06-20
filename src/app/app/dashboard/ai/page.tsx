@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Wand2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DeepSeekLogo from "@/components/ai/icon/IconDeepseek";
@@ -11,11 +11,12 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
 import { cn } from "@/lib/utils";
 import IconOpenAi from "@/components/ai/icon/IconOpenAi";
+import { PromptEditor } from "@/components/ui/prompt-editor";
 
 const AISettingsPage = () => {
   const {
@@ -32,7 +33,7 @@ const AISettingsPage = () => {
     setOpenaiModelId,
     setOpenaiApiEndpoint,
     selectedModel,
-    setSelectedModel
+    setSelectedModel,
   } = useAIConfigStore();
 
   const [currentModel, setCurrentModel] = useState("");
@@ -88,7 +89,7 @@ const AISettingsPage = () => {
       link: "https://platform.deepseek.com",
       color: "text-purple-500",
       bgColor: "bg-purple-50 dark:bg-purple-950/50",
-      isConfigured: !!deepseekApiKey
+      isConfigured: !!deepseekApiKey,
     },
     {
       id: "doubao",
@@ -98,7 +99,7 @@ const AISettingsPage = () => {
       link: "https://console.volcengine.com/ark",
       color: "text-blue-500",
       bgColor: "bg-blue-50 dark:bg-blue-950/50",
-      isConfigured: !!(doubaoApiKey && doubaoModelId)
+      isConfigured: !!(doubaoApiKey && doubaoModelId),
     },
     {
       id: "openai",
@@ -108,8 +109,21 @@ const AISettingsPage = () => {
       link: "https://platform.openai.com/api-keys",
       color: "text-blue-500",
       bgColor: "bg-blue-50 dark:bg-blue-950/50",
-      isConfigured: !!(openaiApiKey && openaiModelId && openaiApiEndpoint)
-    }
+      isConfigured: !!(openaiApiKey && openaiModelId && openaiApiEndpoint),
+    },
+  ];
+
+  const navigationItems = [
+    ...models,
+    {
+      id: "polish-prompt",
+      name: "润色提示词",
+      description: "自定义AI润色功能的系统提示词",
+      icon: Wand2,
+      color: "text-green-500",
+      bgColor: "bg-green-50 dark:bg-green-950/50",
+      isConfigured: true,
+    },
   ];
 
   return (
@@ -145,15 +159,15 @@ const AISettingsPage = () => {
 
           <div className="h-[1px] bg-gray-200 dark:bg-gray-800" />
 
-          {/* 配置模型列表 */}
+          {/* 配置导航列表 */}
           <div className="flex flex-col space-y-1">
-            {models.map((model) => {
-              const Icon = model.icon;
-              const isActive = currentModel === model.id;
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentModel === item.id;
               return (
                 <button
-                  key={model.id}
-                  onClick={() => setCurrentModel(model.id)}
+                  key={item.id}
+                  onClick={() => setCurrentModel(item.id)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg text-left relative",
                     "transition-all duration-200",
@@ -176,7 +190,7 @@ const AISettingsPage = () => {
                         isActive && "text-primary"
                       )}
                     >
-                      {model.name}
+                      {item.name}
                     </span>
                   </div>
                 </button>
@@ -186,6 +200,25 @@ const AISettingsPage = () => {
         </div>
 
         <div className="flex-1 max-w-2xl">
+          {/* 润色提示词编辑器 */}
+          {currentModel === "polish-prompt" && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-semibold flex items-center gap-2">
+                  <div className="shrink-0 text-green-500">
+                    <Wand2 className="h-6 w-6" />
+                  </div>
+                  润色提示词设置
+                </h2>
+                <p className="mt-2 text-muted-foreground">
+                  自定义AI润色功能的系统提示词，影响润色效果和风格
+                </p>
+              </div>
+              <PromptEditor />
+            </div>
+          )}
+
+          {/* AI模型配置 */}
           {models.map(
             (model) =>
               model.id === currentModel && (
@@ -220,7 +253,11 @@ const AISettingsPage = () => {
                       </div>
                       <Input
                         value={
-                          model.id === "doubao" ? doubaoApiKey : model.id === "openai" ? openaiApiKey : deepseekApiKey
+                          model.id === "doubao"
+                            ? doubaoApiKey
+                            : model.id === "openai"
+                            ? openaiApiKey
+                            : deepseekApiKey
                         }
                         onChange={(e) =>
                           handleApiKeyChange(

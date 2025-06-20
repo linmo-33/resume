@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AIModelType } from "@/store/useAIConfigStore";
+import { AIModelType, useAIConfigStore } from "@/store/useAIConfigStore";
 import { AI_MODEL_CONFIGS } from "@/config/ai";
 
 export async function POST(req: Request) {
@@ -12,6 +12,10 @@ export async function POST(req: Request) {
       throw new Error("Invalid model type");
     }
 
+    // 获取用户自定义或默认的润色提示词
+    const aiConfigStore = useAIConfigStore.getState();
+    const systemPrompt = aiConfigStore.polishPrompt;
+
     const response = await fetch(modelConfig.url(apiEndpoint), {
       method: "POST",
       headers: modelConfig.headers(apiKey),
@@ -20,17 +24,7 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "system",
-            content: `你是一个专业的简历优化助手。请帮助优化以下文本，使其更加专业和有吸引力。
-              
-              优化原则：
-              1. 使用更专业的词汇和表达方式
-              2. 突出关键成就和技能
-              3. 保持简洁清晰
-              4. 使用主动语气
-              5. 保持原有信息的完整性
-              6. 保留我输入的格式
-              
-              请直接返回优化后的文本，不要包含任何解释或其他内容。`,
+            content: systemPrompt,
           },
           {
             role: "user",
