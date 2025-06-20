@@ -9,7 +9,7 @@
 
 </div>
 
-Magic Resume WebDAV 增强版是基于[Magic Resume](https://github.com/JOYCEQL/magic-resume)的二次开发版本，在保留原版所有功能的基础上，增加了 WebDAV 云同步功能，支持坚果云等 WebDAV 服务。
+CV Resume 是基于[Magic Resume](https://github.com/JOYCEQL/magic-resume)的二次开发版本，在保留原版所有功能的基础上，增加了 WebDAV 云同步功能，支持坚果云等 WebDAV 服务。
 
 ## 📸 项目截图
 
