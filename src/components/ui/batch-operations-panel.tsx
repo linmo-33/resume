@@ -38,7 +38,7 @@ export const BatchOperationsPanel: React.FC<BatchOperationsPanelProps> = ({
   const [operation, setOperation] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{
-    type: "sync" | "import" | "bidirectional" | "cleanup" | "status";
+    type: "sync" | "import" | "auto";
     data: any;
   } | null>(null);
 
@@ -93,18 +93,8 @@ export const BatchOperationsPanel: React.FC<BatchOperationsPanelProps> = ({
     runOperation("import", () => WebDAVBatchOperations.importAllFromWebDAV());
   };
 
-  const handleBidirectionalSync = () => {
-    runOperation("bidirectional", () =>
-      WebDAVBatchOperations.bidirectionalSync()
-    );
-  };
-
-  const handleCleanup = () => {
-    runOperation("cleanup", () => WebDAVBatchOperations.cleanupOrphanedFiles());
-  };
-
-  const handleCheckStatus = () => {
-    runOperation("status", () => WebDAVBatchOperations.checkSyncStatus());
+  const handleAutoSync = () => {
+    runOperation("auto", () => WebDAVBatchOperations.autoSync());
   };
 
   const renderResult = () => {
@@ -209,8 +199,8 @@ export const BatchOperationsPanel: React.FC<BatchOperationsPanelProps> = ({
           </Card>
         );
 
-      case "bidirectional":
-        const bidirResult = data as {
+      case "auto":
+        const autoResult = data as {
           uploaded: BatchSyncResult;
           downloaded: BatchImportResult;
         };
@@ -219,67 +209,21 @@ export const BatchOperationsPanel: React.FC<BatchOperationsPanelProps> = ({
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-purple-800 flex items-center">
                 <RefreshCw className="h-4 w-4 mr-2" />
-                双向同步结果
+                自动同步结果
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">上传</span>
                 <Badge variant="outline">
-                  {bidirResult.uploaded.success}/{bidirResult.uploaded.total}
+                  {autoResult.uploaded.success}/{autoResult.uploaded.total}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">下载</span>
                 <Badge variant="outline">
-                  {bidirResult.downloaded.imported}/
-                  {bidirResult.downloaded.total}
+                  {autoResult.downloaded.imported}/{autoResult.downloaded.total}
                 </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case "cleanup":
-        const cleanupResult = data as { deleted: number; errors: string[] };
-        return (
-          <Card className="mt-4 border-orange-200 bg-orange-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-orange-800 flex items-center">
-                <Trash2 className="h-4 w-4 mr-2" />
-                清理结果
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {cleanupResult.deleted}
-                </div>
-                <div className="text-xs text-muted-foreground">已删除文件</div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case "status":
-        const statusResult = data as {
-          localOnly: string[];
-          remoteOnly: string[];
-          conflicts: any[];
-          synced: string[];
-        };
-        return (
-          <Card className="mt-4 border-gray-200 bg-gray-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-gray-800 flex items-center">
-                <FileText className="h-4 w-4 mr-2" />
-                同步状态检查
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">已同步</span>
-                <Badge variant="default">{statusResult.synced.length}</Badge>
               </div>
             </CardContent>
           </Card>
@@ -365,54 +309,20 @@ export const BatchOperationsPanel: React.FC<BatchOperationsPanelProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleBidirectionalSync}
+            onClick={handleAutoSync}
             disabled={!isAvailable || isLoading}
             className="flex items-center"
           >
-            {isLoading && operation === "bidirectional" ? (
+            {isLoading && operation === "auto" ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            双向同步
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCheckStatus}
-            disabled={!isAvailable || isLoading}
-            className="flex items-center"
-          >
-            {isLoading && operation === "status" ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <FileText className="h-4 w-4 mr-2" />
-            )}
-            检查状态
+            自动同步
           </Button>
         </div>
 
         <Separator />
-
-        {/* 危险操作 */}
-        <div>
-          <h4 className="text-sm font-medium mb-2 text-orange-600">危险操作</h4>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleCleanup}
-            disabled={!isAvailable || isLoading}
-            className="flex items-center w-full"
-          >
-            {isLoading && operation === "cleanup" ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4 mr-2" />
-            )}
-            清理孤儿文件
-          </Button>
-        </div>
 
         {/* 结果显示 */}
         {renderResult()}

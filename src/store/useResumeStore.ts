@@ -97,12 +97,9 @@ const smartSync = async (
       }
 
       // 检查webdavClient是否已正确初始化
-      if (!webdavClient.client && !webdavClient.config) {
+      if (!webdavClient.isInitialized()) {
         console.log("WebDAV客户端未初始化，正在初始化...");
-        const initialized = await webdavClient.initialize(
-          webdavStore.config,
-          true
-        ); // 强制使用代理模式
+        const initialized = await webdavClient.initialize(webdavStore.config);
         if (!initialized) {
           throw new Error("WebDAV客户端初始化失败");
         }
@@ -191,11 +188,6 @@ export const useResumeStore = create(
             ...data,
             updatedAt: new Date().toISOString(), // 确保更新时间戳
           };
-
-          // 移除每次更改后的自动同步，改为定时同步和手动保存
-          // smartSync(updatedResume, resume).catch((error) => {
-          //   console.error("更新简历时同步失败:", error);
-          // });
 
           return {
             resumes: {
@@ -720,48 +712,43 @@ export const useResumeStore = create(
         }
 
         try {
-          // 执行自动同步
-          const result = await webdavStore.autoSyncOnLoad();
+          // 加载远程简历
+          const remoteResumes = await webdavStore.loadRemoteResumes();
 
-          if (result) {
-            // 同步成功，更新本地简历数据
-            const remoteResumes = await webdavStore.loadRemoteResumes();
+          // 合并远程简历到本地store
+          Object.values(remoteResumes).forEach((remoteResume: any) => {
+            const localResume = get().resumes[remoteResume.id];
 
-            // 合并远程简历到本地store
-            Object.values(remoteResumes).forEach((remoteResume: any) => {
-              const localResume = get().resumes[remoteResume.id];
+            if (!localResume) {
+              // 新的远程简历，直接添加
+              set((state) => ({
+                resumes: {
+                  ...state.resumes,
+                  [remoteResume.id]: remoteResume,
+                },
+              }));
+            } else {
+              // 比较时间戳，使用最新的版本
+              const localTime = new Date(localResume.updatedAt);
+              const remoteTime = new Date(remoteResume.updatedAt);
 
-              if (!localResume) {
-                // 新的远程简历，直接添加
+              if (remoteTime > localTime) {
+                // 远程更新，使用远程版本
                 set((state) => ({
                   resumes: {
                     ...state.resumes,
                     [remoteResume.id]: remoteResume,
                   },
+                  activeResume:
+                    state.activeResumeId === remoteResume.id
+                      ? remoteResume
+                      : state.activeResume,
                 }));
-              } else {
-                // 比较时间戳，使用最新的版本
-                const localTime = new Date(localResume.updatedAt);
-                const remoteTime = new Date(remoteResume.updatedAt);
-
-                if (remoteTime > localTime) {
-                  // 远程更新，使用远程版本
-                  set((state) => ({
-                    resumes: {
-                      ...state.resumes,
-                      [remoteResume.id]: remoteResume,
-                    },
-                    activeResume:
-                      state.activeResumeId === remoteResume.id
-                        ? remoteResume
-                        : state.activeResume,
-                  }));
-                }
               }
-            });
+            }
+          });
 
-            console.log("WebDAV 初始化同步完成");
-          }
+          console.log("WebDAV 初始化同步完成");
         } catch (error) {
           console.warn("WebDAV 初始化同步失败:", error);
         }

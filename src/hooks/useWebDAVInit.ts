@@ -18,8 +18,7 @@ export interface WebDAVInitState {
  * 在应用加载时自动初始化 WebDAV 同步功能
  */
 export const useWebDAVInit = () => {
-  const { isEnabled, isConnected, config, connect, autoSyncOnLoad } =
-    useWebDAVStore();
+  const { isEnabled, isConnected, config, connect } = useWebDAVStore();
   const { initializeWebDAVSync } = useResumeStore();
 
   const [initState, setInitState] = useState<WebDAVInitState>({
@@ -75,7 +74,7 @@ export const useWebDAVInit = () => {
         setInitState({
           isInitializing: true,
           stage: "connecting",
-          progress: 30,
+          progress: 50,
           message: "WebDAV 连接成功",
           details: "正在准备同步...",
         });
@@ -86,24 +85,12 @@ export const useWebDAVInit = () => {
         setInitState({
           isInitializing: true,
           stage: "syncing",
-          progress: 50,
-          message: "检查远程更新...",
-          details: "正在对比本地和远程简历数据",
-        });
-
-        // 2. 执行自动同步检查
-        console.log("执行自动同步检查...");
-        await autoSyncOnLoad();
-
-        setInitState({
-          isInitializing: true,
-          stage: "syncing",
           progress: 80,
           message: "初始化简历同步...",
-          details: "正在设置智能同步机制",
+          details: "正在同步远程简历数据",
         });
 
-        // 3. 初始化简历存储的 WebDAV 同步
+        // 2. 初始化简历存储的 WebDAV 同步
         await initializeWebDAVSync();
 
         setInitState({
@@ -173,7 +160,6 @@ export const useWebDAVInit = () => {
     isConnected,
     config,
     connect,
-    autoSyncOnLoad,
     initializeWebDAVSync,
   ]);
 

@@ -6,9 +6,7 @@ import {
   SyncStrategy,
   SyncStatus,
 } from "@/utils/webdav";
-import { createClient, WebDAVClient } from "webdav";
 import { ResumeData } from "@/types/resume";
-import { WebDAVSyncDetector, SyncScheduler } from "@/utils/webdav-sync";
 
 // 确保store中的strategy类型与webdav.ts中的一致
 interface WebDAVStore {
@@ -40,18 +38,9 @@ interface WebDAVStore {
   getLocalResumeData: () => ResumeData[];
   updateLocalResume: (data: ResumeData) => void;
 
-  // 新增的简化同步方法
-  enableSmartSync: (enabled: boolean) => void;
-  detectChanges: (resumeId?: string) => Promise<{
-    hasChanges: boolean;
-    summary: string;
-  }>;
-  forceSync: () => Promise<boolean>;
-  autoSyncOnLoad: () => Promise<boolean>;
-
-  // 变更处理方法
-  handleChangesDetected: (changes: any) => void;
-  generateChangesSummary: (changes: Record<string, any>) => string;
+  // 新增的代理客户端状态
+  hasClient: boolean;
+  hasConfig: boolean;
 }
 
 export const useWebDAVStore = create<WebDAVStore>()(
@@ -67,10 +56,9 @@ export const useWebDAVStore = create<WebDAVStore>()(
         syncInterval: 30,
       },
 
-      // 内部状态
-      client: null,
-      syncDetector: null,
-      syncScheduler: null,
+      // 新增的代理客户端状态
+      hasClient: false,
+      hasConfig: false,
 
       // 设置配置
       setConfig: (config: WebDAVConfig) => {
@@ -79,58 +67,27 @@ export const useWebDAVStore = create<WebDAVStore>()(
 
       // 连接到 WebDAV 服务器
       connect: async (): Promise<boolean> => {
-        const { config } = get();
-        if (!config) {
-          console.error("WebDAV连接失败: 配置为空");
-          set({
-            syncStatus: {
-              status: "error",
-              error: "请先配置 WebDAV 服务器",
-            },
-          });
-          return false;
-        }
+        if (!get().config) return false;
+
+        set({ syncStatus: { status: "syncing" } });
 
         try {
-          console.log("开始连接WebDAV服务器:", {
-            serverUrl: config.serverUrl,
-            username: config.username,
-            basePath: config.basePath || "/resumes/",
-          });
-
-          set({
-            syncStatus: { status: "syncing" },
-          });
-
+          const config = get().config!;
           // 使用支持代理自动切换的 webdavClient 替代直接的 WebDAV 客户端
-          const connected = await webdavClient.initialize(config, true);
+          const connected = await webdavClient.initialize(config);
 
-          if (!connected) {
-            throw new Error("WebDAV 连接失败");
+          if (connected) {
+            set({
+              isConnected: true,
+              syncStatus: { status: "synced", lastSync: new Date() },
+              hasClient: webdavClient.isInitialized(),
+              hasConfig: !!webdavClient.config,
+            });
+            return true;
+          } else {
+            throw new Error("连接失败");
           }
-
-          // 验证客户端是否正确初始化
-          console.log("WebDAV客户端初始化状态:", {
-            hasClient: !!webdavClient.client,
-            hasConfig: !!webdavClient.config,
-            syncStatus: webdavClient.getSyncStatus(),
-          });
-
-          set({
-            isConnected: true,
-            syncStatus: {
-              status: "synced",
-              lastSync: new Date(),
-            },
-          });
-
-          // 启动状态监听器
-          get().startStatusListener();
-
-          console.log("✅ WebDAV连接成功");
-          return true;
         } catch (error) {
-          console.error("WebDAV连接失败:", error);
           set({
             isConnected: false,
             syncStatus: {
@@ -145,9 +102,9 @@ export const useWebDAVStore = create<WebDAVStore>()(
       // 断开连接
       disconnect: () => {
         webdavClient.disconnect();
-
         set({
           isConnected: false,
+          hasClient: false,
           syncStatus: { status: "idle" },
         });
       },
@@ -155,35 +112,22 @@ export const useWebDAVStore = create<WebDAVStore>()(
       // 测试连接
       testConnection: async (config: WebDAVConfig): Promise<boolean> => {
         try {
-          // 首先尝试直接连接
-          try {
-            const client = createClient(config.serverUrl, {
-              username: config.username,
-              password: config.password,
-            });
+          // 使用代理模式测试连接
+          const params = new URLSearchParams({
+            serverUrl: config.serverUrl,
+            username: config.username,
+            password: config.password,
+          });
 
-            await client.getDirectoryContents("/");
-            return true;
-          } catch (directError) {
-            console.log("直接连接测试失败，尝试代理模式...", directError);
+          const response = await fetch(
+            `/api/webdav/test-connection?${params}`,
+            {
+              method: "GET",
+            }
+          );
 
-            // 如果直接连接失败，尝试代理模式
-            const params = new URLSearchParams({
-              serverUrl: config.serverUrl,
-              username: config.username,
-              password: config.password,
-            });
-
-            const response = await fetch(
-              `/api/webdav/test-connection?${params}`,
-              {
-                method: "GET",
-              }
-            );
-
-            const result = await response.json();
-            return result.success;
-          }
+          const result = await response.json();
+          return result.success;
         } catch (error) {
           console.error("测试连接失败:", error);
           return false;
@@ -331,213 +275,14 @@ export const useWebDAVStore = create<WebDAVStore>()(
           console.error("更新本地简历失败:", error);
         }
       },
-
-      // 变更处理回调（简化版本）
-      handleChangesDetected(changes: any) {
-        console.log("检测到文件变更:", changes);
-        // 简化的变更处理 - 可根据需要扩展
-        if (typeof changes === "object" && changes !== null) {
-          // 将变更转换为字符串格式以便记录
-          const summary = get().generateChangesSummary(changes);
-          console.log("变更摘要:", summary);
-        }
-      },
-
-      // 启用/禁用智能同步（简化版本）
-      enableSmartSync(enabled: boolean) {
-        set({ isEnabled: enabled });
-        // 如果需要可以在这里添加其他智能同步逻辑
-      },
-
-      // 简化的变更检测
-      async detectChanges(resumeId?: string) {
-        if (!webdavClient.config) {
-          return {
-            hasChanges: false,
-            summary: "WebDAV客户端未配置",
-          };
-        }
-
-        try {
-          set({
-            syncStatus: {
-              ...get().syncStatus,
-              status: "syncing",
-            },
-          });
-
-          // 获取本地和远程简历进行比较
-          const localResumes = get().getLocalResumeData();
-          const remoteResumes = await webdavClient.getAllRemoteResumes();
-
-          let hasChanges = false;
-          let changedCount = 0;
-
-          if (resumeId) {
-            const localResume = localResumes.find((r) => r.id === resumeId);
-            const remoteResume = remoteResumes[resumeId];
-
-            if (localResume && remoteResume) {
-              const localTime = new Date(localResume.updatedAt);
-              const remoteTime = new Date(remoteResume.updatedAt);
-              hasChanges =
-                Math.abs(localTime.getTime() - remoteTime.getTime()) > 1000; // 1秒误差
-              if (hasChanges) changedCount = 1;
-            } else if (localResume || remoteResume) {
-              hasChanges = true;
-              changedCount = 1;
-            }
-          } else {
-            // 检测所有简历
-            const allIds = new Set([
-              ...localResumes.map((r) => r.id),
-              ...Object.keys(remoteResumes),
-            ]);
-
-            for (const id of allIds) {
-              const localResume = localResumes.find((r) => r.id === id);
-              const remoteResume = remoteResumes[id];
-
-              if (localResume && remoteResume) {
-                const localTime = new Date(localResume.updatedAt);
-                const remoteTime = new Date(remoteResume.updatedAt);
-                if (
-                  Math.abs(localTime.getTime() - remoteTime.getTime()) > 1000
-                ) {
-                  hasChanges = true;
-                  changedCount++;
-                }
-              } else if (localResume || remoteResume) {
-                hasChanges = true;
-                changedCount++;
-              }
-            }
-          }
-
-          const summary = hasChanges
-            ? `检测到 ${changedCount} 个文件需要同步`
-            : "所有文件已同步";
-
-          set({
-            syncStatus: {
-              ...get().syncStatus,
-              status: "synced",
-            },
-          });
-
-          return {
-            hasChanges,
-            summary,
-          };
-        } catch (error) {
-          set({
-            syncStatus: {
-              ...get().syncStatus,
-              status: "error",
-              error: error instanceof Error ? error.message : "检测变更失败",
-            },
-          });
-
-          return {
-            hasChanges: false,
-            summary: "检测失败",
-          };
-        }
-      },
-
-      // 强制同步（简化版本）
-      async forceSync() {
-        if (!webdavClient.config) return false;
-
-        try {
-          set({
-            syncStatus: {
-              ...get().syncStatus,
-              status: "syncing",
-            },
-          });
-
-          // 使用 webdavClient 进行自动同步
-          const result = await webdavClient.autoSyncAll();
-
-          set({
-            syncStatus: {
-              status: result.success ? "synced" : "error",
-              error: result.success
-                ? undefined
-                : `同步失败，${result.errorCount} 个错误`,
-              lastSync: new Date(),
-            },
-          });
-
-          return result.success;
-        } catch (error) {
-          set({
-            syncStatus: {
-              status: "error",
-              error: error instanceof Error ? error.message : "强制同步失败",
-            },
-          });
-          return false;
-        }
-      },
-
-      // 页面加载时自动同步
-      async autoSyncOnLoad() {
-        const { isEnabled, config } = get();
-        if (!isEnabled || !config) return false;
-
-        try {
-          // 连接到WebDAV
-          const connected = await get().connect();
-          if (!connected) return false;
-
-          // 使用webdavClient进行自动同步
-          await webdavClient.initialize(config, true); // 强制使用代理模式
-          const result = await webdavClient.autoSyncAll();
-
-          if (result.success) {
-            set({
-              syncStatus: {
-                status: "synced",
-                lastSync: new Date(),
-              },
-            });
-
-            // 如果有同步内容，提示用户
-            if (result.syncedCount > 0) {
-              console.log(`已同步 ${result.syncedCount} 个简历`);
-            }
-          }
-
-          return result.success;
-        } catch (error) {
-          console.error("自动同步失败:", error);
-          return false;
-        }
-      },
-
-      // 生成变更摘要
-      generateChangesSummary(changes: Record<string, any>): string {
-        const totalFiles = Object.keys(changes).length;
-        const needsSyncFiles = Object.values(changes).filter(
-          (change: any) =>
-            change && typeof change === "object" && change.needsSync
-        );
-
-        if (needsSyncFiles.length === 0) {
-          return "所有文件已同步";
-        }
-
-        return `共 ${totalFiles} 个文件，${needsSyncFiles.length} 个需要同步`;
-      },
     }),
     {
       name: "webdav-store",
+      // 排除敏感信息
       partialize: (state) => ({
         config: state.config,
         isEnabled: state.isEnabled,
-        // 不持久化运行时状态
+        strategy: state.strategy,
       }),
     }
   )

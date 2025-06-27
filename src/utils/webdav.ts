@@ -1,4 +1,3 @@
-import { createClient, WebDAVClient } from "webdav";
 import { ResumeData } from "@/types/resume";
 import { WebDAVProxyClient } from "./webdav-proxy";
 
@@ -21,10 +20,8 @@ export interface SyncStatus {
 }
 
 export class WebDAVSyncClient {
-  public client: WebDAVClient | null = null;
   public config: WebDAVConfig | null = null;
   private proxyClient: WebDAVProxyClient | null = null;
-  private useProxy: boolean = false;
   private listeners: (() => void)[] = [];
   private networkStatusListener: (() => void) | null = null;
   public syncStatus: SyncStatus = { status: "idle" };
@@ -35,55 +32,21 @@ export class WebDAVSyncClient {
   }
 
   /**
-   * 初始化 WebDAV 客户端
-   * 优化：直接使用代理模式，避免跨域错误日志
+   * 初始化 WebDAV 客户端 - 纯代理模式
    */
-  async initialize(
-    config: WebDAVConfig,
-    forceProxy: boolean = true
-  ): Promise<boolean> {
+  async initialize(config: WebDAVConfig): Promise<boolean> {
     try {
       this.config = config;
 
-      if (forceProxy) {
-        // 直接使用代理模式，避免跨域尝试
-        console.log("使用代理模式连接WebDAV...");
-        this.proxyClient = new WebDAVProxyClient(config);
-        const proxyTest = await this.proxyClient.testConnection();
+      // 使用代理模式连接
+      console.log("使用代理模式连接WebDAV...");
+      this.proxyClient = new WebDAVProxyClient(config);
+      const proxyTest = await this.proxyClient.testConnection();
 
-        if (proxyTest) {
-          this.useProxy = true;
-          this.client = null;
-          console.log("✅ 代理模式连接成功");
-        } else {
-          throw new Error("代理模式连接失败");
-        }
+      if (proxyTest) {
+        console.log("✅ 代理模式连接成功");
       } else {
-        // 原有的自动检测逻辑（保留兼容性）
-        console.log("尝试直接WebDAV连接...");
-        try {
-          this.client = createClient(config.serverUrl, {
-            username: config.username,
-            password: config.password,
-          });
-
-          await this.client.getDirectoryContents("/");
-          this.useProxy = false;
-          console.log("直接WebDAV连接成功");
-        } catch (directError) {
-          console.log("直接连接失败，切换到代理模式...");
-
-          this.proxyClient = new WebDAVProxyClient(config);
-          const proxyTest = await this.proxyClient.testConnection();
-
-          if (proxyTest) {
-            this.useProxy = true;
-            this.client = null;
-            console.log("代理模式连接成功");
-          } else {
-            throw new Error("直接连接和代理模式都失败");
-          }
-        }
+        throw new Error("代理模式连接失败");
       }
 
       // 确保基础目录存在
@@ -109,14 +72,11 @@ export class WebDAVSyncClient {
   }
 
   /**
-   * 获取当前活动的客户端（直接或代理）
+   * 获取当前活动的客户端（代理）
    */
-  private getActiveClient(): WebDAVClient | WebDAVProxyClient {
-    if (this.useProxy && this.proxyClient) {
+  private getActiveClient(): WebDAVProxyClient {
+    if (this.proxyClient) {
       return this.proxyClient;
-    }
-    if (this.client) {
-      return this.client;
     }
     throw new Error("没有可用的WebDAV客户端");
   }
@@ -127,12 +87,7 @@ export class WebDAVSyncClient {
   async fileExists(path: string): Promise<boolean> {
     try {
       const client = this.getActiveClient();
-      if (this.useProxy && this.proxyClient) {
-        return await this.proxyClient.exists(path);
-      } else {
-        await (client as WebDAVClient).stat(path);
-        return true;
-      }
+      return await client.exists(path);
     } catch (error) {
       // 特殊处理404错误，这是预期的结果
       if (
@@ -158,13 +113,7 @@ export class WebDAVSyncClient {
    */
   async getDirectoryContents(path: string): Promise<any[]> {
     const client = this.getActiveClient();
-    if (this.useProxy && this.proxyClient) {
-      return await this.proxyClient.getDirectoryContents(path);
-    } else {
-      const result = await (client as WebDAVClient).getDirectoryContents(path);
-      // 处理 WebDAV 客户端可能返回的不同类型
-      return Array.isArray(result) ? result : (result as any).data || [];
-    }
+    return await client.getDirectoryContents(path);
   }
 
   /**
@@ -172,14 +121,7 @@ export class WebDAVSyncClient {
    */
   async getFileContents(path: string): Promise<string> {
     const client = this.getActiveClient();
-    if (this.useProxy && this.proxyClient) {
-      return await this.proxyClient.getFileContents(path);
-    } else {
-      const content = await (client as WebDAVClient).getFileContents(path, {
-        format: "text",
-      });
-      return content as string;
-    }
+    return await client.getFileContents(path);
   }
 
   /**
@@ -188,11 +130,7 @@ export class WebDAVSyncClient {
   async putFileContents(path: string, content: string): Promise<void> {
     try {
       const client = this.getActiveClient();
-      if (this.useProxy && this.proxyClient) {
-        await this.proxyClient.putFileContents(path, content);
-      } else {
-        await (client as WebDAVClient).putFileContents(path, content);
-      }
+      await client.putFileContents(path, content);
     } catch (error) {
       // 如果是409错误，可能是父目录不存在
       if (
@@ -213,11 +151,7 @@ export class WebDAVSyncClient {
    */
   async deleteFile(path: string): Promise<void> {
     const client = this.getActiveClient();
-    if (this.useProxy && this.proxyClient) {
-      await this.proxyClient.deleteFile(path);
-    } else {
-      await (client as WebDAVClient).deleteFile(path);
-    }
+    await client.deleteFile(path);
   }
 
   /**
@@ -461,7 +395,6 @@ export class WebDAVSyncClient {
    * 断开连接
    */
   disconnect(): void {
-    this.client = null;
     this.config = null;
     this.syncStatus = { status: "idle" };
   }
@@ -477,11 +410,7 @@ export class WebDAVSyncClient {
    * 检查客户端是否已正确初始化（支持代理模式）
    */
   isInitialized(): boolean {
-    return (
-      this.config !== null &&
-      ((this.useProxy && this.proxyClient !== null) ||
-        (!this.useProxy && this.client !== null))
-    );
+    return this.proxyClient !== null;
   }
 
   /**
@@ -602,11 +531,7 @@ export class WebDAVSyncClient {
    */
   async createDirectory(path: string): Promise<void> {
     const client = this.getActiveClient();
-    if (this.useProxy && this.proxyClient) {
-      await this.proxyClient.createDirectory(path);
-    } else {
-      await (client as WebDAVClient).createDirectory(path);
-    }
+    await client.createDirectory(path);
   }
 }
 
